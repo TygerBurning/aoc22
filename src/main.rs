@@ -1,6 +1,8 @@
 use structopt::StructOpt;
 mod day01;
 mod day02;
+mod day03;
+
 // #[macro_use]
 // extern crate lazy_static;
 // #[macro_use]
@@ -16,6 +18,7 @@ fn main() {
     match args.day {
         1 => day01::day01(),
         2 => day02::day02(),
+        3 => day03::day03(),
         _ => println!("Unimplemented day: {}", args.day),
     }
 }
