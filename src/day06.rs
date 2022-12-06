@@ -1,12 +1,16 @@
-use itertools::izip;
+use itertools::Itertools;
+
+fn unique_chars(stream: Vec<char>, count: usize) -> usize {
+    stream
+        .windows(count)
+        .position(|cs| cs.iter().unique().count() == cs.len())
+        .unwrap()
+        + count
+}
 
 pub fn day06() {
     let stream: Vec<char> = include_str!("../inputs/day06.txt").chars().collect();
 
-    let (_, _, _, _, i) = izip!(&stream, &stream[1..], &stream[2..], &stream[3..], 1..)
-        .find(|(&a, &b, &c, &d, _)| a != b && a != c && a != d && b != c && b != d && c != d)
-        .unwrap();
-
-    // +3 because they want the index of the *last* char, not the first char.
-    println!("Part A answer is: {:?}", i + 3);
+    println!("Part A answer is: {:?}", unique_chars(stream.clone(), 4));
+    println!("Part B answer is: {:?}", unique_chars(stream, 14));
 }
