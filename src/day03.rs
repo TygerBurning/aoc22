@@ -26,23 +26,23 @@ fn find_overlap(a: &str, b: &str) -> u32 {
 
 // Laziness... Should really just write a proper intersect function.
 fn find_overlap_3(x: &str, y: &str, z: &str) -> u32 {
-        let mut items: [u8; 52] = [0; 52];
+    let mut items: [u8; 52] = [0; 52];
 
-        for c in x.chars().unique() {
-            items[get_priority(c) as usize - 1] += 1;
-        }
-
-        for c in y.chars().unique() {
-                items[get_priority(c) as usize - 1] += 1;
-            }
-
-        for c in z.chars() {
-            if items[get_priority(c) as usize - 1] == 2 {
-                return get_priority(c);
-            }
-        }
-        panic!("Couldn't find duplicate between {}, {} and {}", x, y, z);
+    for c in x.chars().unique() {
+        items[get_priority(c) as usize - 1] += 1;
     }
+
+    for c in y.chars().unique() {
+        items[get_priority(c) as usize - 1] += 1;
+    }
+
+    for c in z.chars() {
+        if items[get_priority(c) as usize - 1] == 2 {
+            return get_priority(c);
+        }
+    }
+    panic!("Couldn't find duplicate between {}, {} and {}", x, y, z);
+}
 
 pub fn day03() {
     let rucksacks = include_str!("../inputs/day03.txt").lines();
@@ -54,9 +54,10 @@ pub fn day03() {
     });
 
     let binding = rucksacks.collect::<Vec<_>>();
-    let badges = binding.as_slice().chunks(3).map(|elem|
-        find_overlap_3(elem[0], elem[1], elem[2])
-    );
+    let badges = binding
+        .as_slice()
+        .chunks(3)
+        .map(|elem| find_overlap_3(elem[0], elem[1], elem[2]));
 
     println!("Part A answer is: {:?}", priorities.sum::<u32>());
     println!("Part B answer is: {:?}", badges.sum::<u32>());
