@@ -25,10 +25,10 @@ impl Coords {
 }
 
 fn move_tail(head_pos: &Coords, tail_pos: &Coords) -> Coords {
-   if tail_pos.neighbours(head_pos) {
+    if tail_pos.neighbours(head_pos) {
         // No need to move the tail
         return tail_pos.clone();
-   }
+    }
 
     let mut new_tail = tail_pos.clone();
     if head_pos.x != tail_pos.x {
@@ -50,7 +50,7 @@ fn move_tail(head_pos: &Coords, tail_pos: &Coords) -> Coords {
 
 fn solve_with_knots(input: &str, knot_count: u8) -> HashSet<Coords> {
     let mut tail_visits: HashSet<Coords> = HashSet::new();
-    let mut knot_positions = vec![Coords {x: 0, y: 0}; knot_count as usize];
+    let mut knot_positions = vec![Coords { x: 0, y: 0 }; knot_count as usize];
     tail_visits.insert(knot_positions[0].clone());
 
     let re = Regex::new(r"(.) (\d*)").unwrap();
