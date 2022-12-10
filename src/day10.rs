@@ -52,7 +52,7 @@ pub fn day10() {
 #[test]
 fn sample_input() {
     assert_eq!(
-        13141,
+        13140,
         run_program(
             "addx 15
 addx -11
