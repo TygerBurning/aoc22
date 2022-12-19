@@ -50,10 +50,10 @@ impl Choice {
 
     fn from_str(s: &str) -> Result<Self, ParseError> {
         match s {
-            "A" | "X" => return Ok(Choice::Rock),
-            "B" | "Y" => return Ok(Choice::Paper),
-            "C" | "Z" => return Ok(Choice::Scissors),
-            _ => return Err(ParseError),
+            "A" | "X" => Ok(Choice::Rock),
+            "B" | "Y" => Ok(Choice::Paper),
+            "C" | "Z" => Ok(Choice::Scissors),
+            _ => Err(ParseError),
         }
     }
 }
