@@ -83,8 +83,8 @@ fn build(input: &str) -> Vec<Vec<Tree>> {
             line.chars()
                 .enumerate()
                 .map(|(j, t)| Tree {
-                    i: i,
-                    j: j,
+                    i,
+                    j,
                     height: t.to_digit(10).unwrap() as u8,
                     nearest_heights_left: [None; 10],
                     nearest_heights_top: [None; 10],
@@ -100,7 +100,7 @@ fn build(input: &str) -> Vec<Vec<Tree>> {
         for j in 0..tree_grid[0].len() {
             if i > 0 {
                 let above = tree_grid.get(i - 1).unwrap().get(j).unwrap();
-                let mut top_trees = above.nearest_heights_top.clone();
+                let mut top_trees = above.nearest_heights_top;
                 top_trees[above.height as usize] = Some(i - 1);
 
                 tree_grid
@@ -112,7 +112,7 @@ fn build(input: &str) -> Vec<Vec<Tree>> {
             }
             if j > 0 {
                 let left = tree_grid.get(i).unwrap().get(j - 1).unwrap();
-                let mut left_trees = left.nearest_heights_left.clone();
+                let mut left_trees = left.nearest_heights_left;
                 left_trees[left.height as usize] = Some(j - 1);
 
                 tree_grid
@@ -130,7 +130,7 @@ fn build(input: &str) -> Vec<Vec<Tree>> {
         for j in (0..tree_grid[0].len()).rev() {
             if i < tree_grid.len() - 1 {
                 let bottom = tree_grid.get(i + 1).unwrap().get(j).unwrap();
-                let mut bottom_trees = bottom.nearest_heights_bottom.clone();
+                let mut bottom_trees = bottom.nearest_heights_bottom;
                 bottom_trees[bottom.height as usize] = Some(i + 1);
 
                 tree_grid
@@ -143,7 +143,7 @@ fn build(input: &str) -> Vec<Vec<Tree>> {
 
             if j < tree_grid[0].len() - 1 {
                 let right = tree_grid.get(i).unwrap().get(j + 1).unwrap();
-                let mut right_trees = right.nearest_heights_right.clone();
+                let mut right_trees = right.nearest_heights_right;
                 right_trees[right.height as usize] = Some(j + 1);
 
                 tree_grid

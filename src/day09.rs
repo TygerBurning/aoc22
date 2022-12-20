@@ -67,7 +67,7 @@ fn solve_with_knots(input: &str, knot_count: u8) -> HashSet<Coords> {
                 let follow_pos = &knot_positions[step];
 
                 // Is this idiomatic Rust? It doesn't feel it.
-                let new_follower = move_tail(&lead_pos, follow_pos);
+                let new_follower = move_tail(lead_pos, follow_pos);
                 knot_positions[step] = new_follower;
             }
 

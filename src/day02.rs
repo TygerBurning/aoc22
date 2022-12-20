@@ -63,10 +63,10 @@ impl FromStr for GameResult {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "X" => return Ok(GameResult::Lose),
-            "Y" => return Ok(GameResult::Draw),
-            "Z" => return Ok(GameResult::Win),
-            _ => return Err(ParseError),
+            "X" => Ok(GameResult::Lose),
+            "Y" => Ok(GameResult::Draw),
+            "Z" => Ok(GameResult::Win),
+            _ => Err(ParseError),
         }
     }
 }
@@ -90,8 +90,8 @@ fn score_game_strategy_2(game: &str) -> u32 {
 pub fn day02() {
     let games = include_str!("../inputs/day02.txt").lines();
 
-    let scores1 = games.clone().map(|game| score_game_strategy_1(game));
-    let scores2 = games.map(|game| score_game_strategy_2(game));
+    let scores1 = games.clone().map(score_game_strategy_1);
+    let scores2 = games.map(score_game_strategy_2);
 
     println!("Part A answer is: {:?}", scores1.sum::<u32>());
     println!("Part B answer is: {:?}", scores2.sum::<u32>());
