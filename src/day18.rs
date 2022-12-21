@@ -14,10 +14,13 @@ struct Cube {
 fn parse_input(input: &str) -> Vec<Coord> {
     input
         .lines()
-        .map(|elem| Coord {
-            x: elem.split(",").collect::<Vec<&str>>()[0].parse().unwrap(),
-            y: elem.split(",").collect::<Vec<&str>>()[1].parse().unwrap(),
-            z: elem.split(",").collect::<Vec<&str>>()[2].parse().unwrap(),
+        .map(|elem| {
+            let parts = elem.split(",").collect::<Vec<&str>>();
+            Coord {
+                x: parts[0].parse().unwrap(),
+                y: parts[1].parse().unwrap(),
+                z: parts[2].parse().unwrap(),
+            }
         })
         .collect()
 }
@@ -26,6 +29,7 @@ fn dfs(grid: &mut Vec<Vec<Vec<Cube>>>, node: Coord) {
     if grid[node.x][node.y][node.z].visited || grid[node.x][node.y][node.z].solid {
         return;
     }
+    println!("Exploring: {},{},{}", node.x, node.y, node.z);
     grid[node.x][node.y][node.z].visited = true;
 
     // x

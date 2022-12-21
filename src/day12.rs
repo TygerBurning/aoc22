@@ -64,9 +64,7 @@ fn bfs(grid: &Vec<Vec<Coord>>, start: &Coord, end: &Coord, part_a: bool) -> Vec<
             } else {
                 current.can_reach_b(&other)
             };
-            if can_reach
-                && !visited.contains(&other)
-                && !q.iter().map(|(c, _)| c).contains(&other)
+            if can_reach && !visited.contains(&other) && !q.iter().map(|(c, _)| c).contains(&other)
             {
                 let mut p = path.clone();
                 p.push(other.clone());
