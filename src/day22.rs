@@ -1,6 +1,5 @@
-use std::collections::{hash_map::Keys, HashMap, HashSet};
+use std::collections::HashMap;
 
-use itertools::Itertools;
 use regex::Regex;
 
 #[derive(Debug)]
