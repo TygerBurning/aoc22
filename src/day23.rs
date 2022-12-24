@@ -215,7 +215,7 @@ fn solve(_elves: HashSet<Coord>) -> (i32, i32) {
                 // Do nothing
                 new_elves.insert(coord.clone(), coord.clone());
             } else {
-                for (i, d) in dirs.iter().enumerate() {
+                for d in dirs.iter() {
                     if d(&elves, &mut new_elves, coord.clone()) {
                         moved = true;
                         break;
