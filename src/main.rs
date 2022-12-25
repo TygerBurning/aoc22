@@ -22,6 +22,7 @@ mod day21;
 mod day22;
 mod day23;
 mod day24;
+mod day25;
 
 // #[macro_use]
 // extern crate lazy_static;
@@ -59,6 +60,7 @@ fn main() {
         22 => day22::day22(),
         23 => day23::day23(),
         24 => day24::day24(),
+        25 => day25::day25(),
         _ => println!("Unimplemented day: {}", args.day),
     }
 }
