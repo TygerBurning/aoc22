@@ -295,5 +295,5 @@ fn c_shape() {
     let cs = parse_input(input);
     let (part_a, part_b) = solve(cs);
     assert_eq!(part_a, 26);
-    assert_eq!(part_b, 26);
+    assert_eq!(part_b, 16);
 }

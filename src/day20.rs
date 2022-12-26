@@ -13,8 +13,8 @@ fn parse_input(s: &str) -> Vec<N> {
     let len = s.lines().count();
 
     // PART_B COMMENT HERE
-    // let multiplier = 1;
-    let multiplier = 811589153;
+    let multiplier = 1;
+    // let multiplier = 811589153;
 
     s.lines()
         .enumerate()
@@ -37,28 +37,28 @@ fn calculate_answer(nums: &Vec<N>) -> i64 {
 fn solve(nums: &mut Vec<N>) -> (i64, i64) {
     let mut part_a = 0;
     for round in 0..10 {
-    for old_index in 0..nums.len() {
-        let current_index = nums
-            .iter()
-            .position(|n| n.original_pos == old_index)
-            .unwrap();
+        for old_index in 0..nums.len() {
+            let current_index = nums
+                .iter()
+                .position(|n| n.original_pos == old_index)
+                .unwrap();
 
-        let new_index = modulo(
-            current_index as i64
-                + nums
-                    .iter()
-                    .find(|n| n.original_pos == old_index)
-                    .unwrap()
-                    .wrap_val as i64,
-            nums.len() - 1,
-        );
+            let new_index = modulo(
+                current_index as i64
+                    + nums
+                        .iter()
+                        .find(|n| n.original_pos == old_index)
+                        .unwrap()
+                        .wrap_val as i64,
+                nums.len() - 1,
+            );
 
-        if current_index < new_index + 1 {
-            nums[current_index..new_index + 1].rotate_left(1);
-        } else {
-            nums[new_index..current_index + 1].rotate_right(1);
+            if current_index < new_index + 1 {
+                nums[current_index..new_index + 1].rotate_left(1);
+            } else {
+                nums[new_index..current_index + 1].rotate_right(1);
+            }
         }
-    }
         if round == 0 {
             part_a = calculate_answer(nums)
         }
@@ -85,7 +85,6 @@ fn sample_input() {
 0
 4"#;
     let mut nums: Vec<N> = parse_input(input);
-    let (a, b) = solve(&mut nums);
+    let (a, _b) = solve(&mut nums);
     assert_eq!(a, 3);
-    assert_eq!(b, 1623178306);
 }

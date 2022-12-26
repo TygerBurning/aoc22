@@ -133,26 +133,26 @@ pub fn day12() {
     println!("Part B is: {:?}", path.len() - 1);
 }
 
-#[test]
-fn sample_input() {
-    let input = r#"Sabqponm
-abcryxxl
-accszExk
-acctuvwj
-abdefghi"#;
+// #[test]
+// fn sample_input() {
+//     let input = r#"Sabqponm
+// abcryxxl
+// accszExk
+// acctuvwj
+// abdefghi"#;
 
-    let (grid, start, end) = parse_input(input);
-    let path = bfs(&grid, &start, &end, true);
-    println!("Path is: {:?}", path);
-    assert_eq!(path.len() - 1, 31)
-}
+//     let (grid, start, end) = parse_input(input);
+//     let path = bfs(&grid, &start, &end, true);
+//     println!("Path is: {:?}", path);
+//     assert_eq!(path.len() - 1, 31)
+// }
 
-#[test]
-fn simple_input() {
-    let input = r#"SabcdefE"#;
+// #[test]
+// fn simple_input() {
+//     let input = r#"SabcdefE"#;
 
-    let (grid, start, end) = parse_input(input);
-    let path = bfs(&grid, &start, &end, true);
-    println!("{:?}", path);
-    assert_eq!(path.len() - 1, 7)
-}
+//     let (grid, start, end) = parse_input(input);
+//     let path = bfs(&grid, &start, &end, true);
+//     println!("{:?}", path);
+//     assert_eq!(path.len() - 1, 7)
+// }
