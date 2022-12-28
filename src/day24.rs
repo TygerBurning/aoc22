@@ -1,237 +1,282 @@
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::collections::{BTreeSet, VecDeque};
 
-#[derive(Clone, Copy, PartialEq)]
-enum Direction {
-    Right,
-    Left,
-    Up,
-    Down,
-}
-
-#[derive(Eq, Hash, PartialEq, Clone, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 struct Coord {
     x: usize,
     y: usize,
 }
 
-fn blizzard_move(
-    blizzards: &HashMap<Coord, Vec<Direction>>,
-    max_x: usize,
-    max_y: usize,
-) -> HashMap<Coord, Vec<Direction>> {
-    let mut new_blizzards: HashMap<Coord, Vec<Direction>> = HashMap::new();
-    for (location, direction_vec) in blizzards.iter() {
-        for direction in direction_vec {
-            let mut new_coord = *location;
-            if *direction == Direction::Right {
-                if new_coord.x == max_x {
-                    new_coord.x = 1;
-                } else {
-                    new_coord.x += 1;
-                }
-            } else if *direction == Direction::Left {
-                if new_coord.x == 1 {
-                    new_coord.x = max_x;
-                } else {
-                    new_coord.x -= 1;
-                }
-            } else if *direction == Direction::Down {
-                if new_coord.y == max_y {
-                    new_coord.y = 1;
-                } else {
-                    new_coord.y += 1;
-                }
-            } else if *direction == Direction::Up {
-                if new_coord.y == 1 {
-                    new_coord.y = max_y;
-                } else {
-                    new_coord.y -= 1;
-                }
-            }
-            if let std::collections::hash_map::Entry::Vacant(e) = new_blizzards.entry(new_coord) {
-                e.insert(vec![*direction]);
-            } else {
-                new_blizzards.get_mut(&new_coord).unwrap().push(*direction);
-            }
+impl Coord {
+    fn n(self) -> Coord {
+        Coord {
+            x: self.x,
+            y: self.y - 1,
         }
     }
-    new_blizzards
-}
-
-fn go(
-    blizzard_positions: &Vec<HashMap<Coord, Vec<Direction>>>,
-    current_position: &Coord,
-    goals: &[Coord],
-    goal_index: usize,
-    current_cost: usize,
-    complete_paths: &mut HashSet<usize>,
-    states: &mut HashSet<String>,
-) {
-    if current_position == goals.get(goal_index).unwrap() {
-        if goal_index == goals.len() - 1 {
-            complete_paths.insert(current_cost);
-            return;
-        } else {
-            go(
-                blizzard_positions,
-                current_position,
-                goals,
-                goal_index + 1,
-                current_cost,
-                complete_paths,
-                states,
-            );
-            return;
+    fn e(self) -> Coord {
+        Coord {
+            x: self.x + 1,
+            y: self.y,
         }
-    } else if blizzard_positions
-        .get(current_cost)
-        .unwrap()
-        .contains_key(current_position)
-        || complete_paths.iter().min().unwrap()
-            < &((goals.len() - 1 - goal_index) * (goals[0].x - 1 + goals[0].y)
-                + (goals.get(goal_index).unwrap().x as i32 - current_position.x as i32)
-                    .unsigned_abs() as usize
-                + (goals.get(goal_index).unwrap().y as i32 - current_position.y as i32)
-                    .unsigned_abs() as usize
-                + current_cost)
-    {
-        return;
     }
-    let state = format!(
-        "{}.{}.{}.{}",
-        goal_index, current_position.x, current_position.y, current_cost
-    );
-    if states.contains(&state) {
-        return;
-    } else {
-        states.insert(state);
+    fn s(self) -> Coord {
+        Coord {
+            x: self.x,
+            y: self.y + 1,
+        }
     }
-    if (current_position.y < goals[0].y - 1)
-        || (current_position.x == goals[0].x && current_position.y != goals[0].y)
-    {
-        let mut new_position_down: Coord = *current_position;
-        new_position_down.y += 1;
-        go(
-            blizzard_positions,
-            &new_position_down,
-            goals,
-            goal_index,
-            current_cost + 1,
-            complete_paths,
-            states,
-        );
+    fn w(self) -> Coord {
+        Coord {
+            x: self.x - 1,
+            y: self.y,
+        }
     }
-    if current_position.x < goals[0].x && current_position.y != 0 {
-        let mut new_position_right: Coord = *current_position;
-        new_position_right.x += 1;
-        go(
-            blizzard_positions,
-            &new_position_right,
-            goals,
-            goal_index,
-            current_cost + 1,
-            complete_paths,
-            states,
-        );
+
+    fn get_neighbours(
+        self,
+        grid: &Grid,
+        width: &usize,
+        height: &usize,
+        day: usize,
+    ) -> BTreeSet<Coord> {
+        let mut neighbours = BTreeSet::new();
+        if !grid.contains_blizzard(&self, day) {
+            neighbours.insert(self.clone());
+        }
+        if self.x > 1
+            && self.y > 0
+            && self.y < height - 1
+            && !grid.contains_blizzard(&self.w(), day)
+        {
+            neighbours.insert(self.w());
+        }
+        if self.x < width - 2
+            && self.y > 0
+            && self.y < height - 1
+            && !grid.contains_blizzard(&self.e(), day)
+        {
+            neighbours.insert(self.e());
+        }
+        if self.y > 1 && self.x > 0 && self.x < width - 1 && !grid.contains_blizzard(&self.n(), day)
+        {
+            neighbours.insert(self.n());
+        }
+        if self.y < height - 2
+            && self.x > 0
+            && self.x < width - 1
+            && !grid.contains_blizzard(&self.s(), day)
+        {
+            neighbours.insert(self.s());
+        }
+
+        // Special case for if we're next to the exits
+        if self.y == 1 && self.x == 1 {
+            neighbours.insert(self.n());
+        }
+        if self.y == height - 2 && self.x == width - 2 {
+            neighbours.insert(self.s());
+        }
+        neighbours
     }
-    if current_position.x > 1 && current_position.y != goals[0].y {
-        let mut new_position_left: Coord = *current_position;
-        new_position_left.x -= 1;
-        go(
-            blizzard_positions,
-            &new_position_left,
-            goals,
-            goal_index,
-            current_cost + 1,
-            complete_paths,
-            states,
-        );
-    }
-    if current_position.y > 1 || (current_position.x == 1 && current_position.y == 1) {
-        let mut new_position_up: Coord = *current_position;
-        new_position_up.y -= 1;
-        go(
-            blizzard_positions,
-            &new_position_up,
-            goals,
-            goal_index,
-            current_cost + 1,
-            complete_paths,
-            states,
-        );
-    }
-    go(
-        blizzard_positions,
-        current_position,
-        goals,
-        goal_index,
-        current_cost + 1,
-        complete_paths,
-        states,
-    );
 }
 
-fn shortest_route(
-    blizzard_positions: &Vec<HashMap<Coord, Vec<Direction>>>,
-    max_path: usize,
-    goals: &[Coord],
-    start_position: &Coord,
-) -> usize {
-    let mut complete_paths = HashSet::new();
-    complete_paths.insert(max_path * goals.len());
-    let mut states: HashSet<String> = HashSet::new();
-    go(
-        blizzard_positions,
-        start_position,
-        goals,
-        0,
-        0,
-        &mut complete_paths,
-        &mut states,
-    );
-    *complete_paths.iter().min().unwrap()
+#[derive(Debug, Clone, Hash, Eq, PartialEq, PartialOrd, Ord)]
+struct Grid {
+    blizzard_positions_up: BTreeSet<Coord>,
+    blizzard_positions_down: BTreeSet<Coord>,
+    blizzard_positions_left: BTreeSet<Coord>,
+    blizzard_positions_right: BTreeSet<Coord>,
+    height: usize,
+    width: usize,
 }
 
-pub(crate) fn day24() {
-    let f: File = File::open("inputs/day24.txt").unwrap();
-    let reader: BufReader<File> = BufReader::new(f);
-    let input_data: Vec<String> = reader.lines().collect::<io::Result<Vec<String>>>().unwrap();
-    let start_position = Coord { x: 1, y: 0 };
-    let goal = Coord {
-        x: input_data.first().unwrap().len() - 2,
-        y: input_data.len() - 1,
-    };
-    let part1_goals = [goal];
-    let part2_goals = [goal, start_position, goal];
-    let max_path = 4 * (goal.x - 1 + goal.y);
-    let mut blizzards: HashMap<Coord, Vec<Direction>> = HashMap::new();
-    for (ii, line) in input_data.iter().enumerate() {
-        for (jj, c) in line.chars().enumerate() {
+impl Grid {
+    fn contains_blizzard(&self, c: &Coord, day: usize) -> bool {
+        // There is never a blizzard where the player can stand.
+        if c.y == 0 || c.y == self.height - 1 || c.x == 0 || c.x == self.width - 1 {
+            return false;
+        }
+
+        // For there to be a blizzard in this position on day X, find
+        // out where the blizzard needed to have originally started.
+        // This is... fiddly.
+        let original_coord_right = Coord {
+            x: {
+                (((c.x - 1) + (self.width - 2) - (day % (self.width - 2))) % (self.width - 2)) + 1
+            },
+            y: c.y,
+        };
+        let original_coord_left = Coord {
+            x: { (((c.x - 1) + day) % (self.width - 2)) + 1 },
+            y: c.y,
+        };
+        let original_coord_up = Coord {
+            x: c.x,
+            y: { (((c.y - 1) + day) % (self.height - 2)) + 1 },
+        };
+        let original_coord_down = Coord {
+            x: c.x,
+            y: {
+                (((c.y - 1) + (self.height - 2) - (day % (self.height - 2))) % (self.height - 2))
+                    + 1
+            },
+        };
+
+        self.blizzard_positions_up.contains(&original_coord_up)
+            || self.blizzard_positions_down.contains(&original_coord_down)
+            || self
+                .blizzard_positions_right
+                .contains(&original_coord_right)
+            || self.blizzard_positions_left.contains(&original_coord_left)
+    }
+}
+
+fn bfs(grid: &mut Grid, start: &Coord, end: &Coord, initial_day: usize) -> usize {
+    let mut visited = BTreeSet::new();
+    let mut q = VecDeque::new();
+    let cycle = (grid.height - 2) * (grid.width - 2);
+
+    q.push_back((start.clone(), initial_day));
+
+    while !q.is_empty() {
+        let (current, path) = q.pop_front().unwrap();
+
+        if &current == end {
+            return path;
+        }
+
+        if visited.contains(&(current, path % cycle)) {
+            continue;
+        }
+        visited.insert((current, path % cycle));
+
+        for c in current.get_neighbours(&grid, &grid.width, &grid.height, path) {
+            q.push_back((c, path + 1));
+        }
+    }
+    0
+}
+
+fn parse_input(input: &str) -> Grid {
+    println!("Parsing input");
+    let mut blizzard_positions_up = BTreeSet::new();
+    let mut blizzard_positions_down = BTreeSet::new();
+    let mut blizzard_positions_left = BTreeSet::new();
+    let mut blizzard_positions_right = BTreeSet::new();
+
+    for (y, s) in input.lines().enumerate() {
+        for (x, c) in s.chars().enumerate() {
             match c {
-                'v' => blizzards.insert(Coord { x: jj, y: ii }, vec![Direction::Down]),
-                '>' => blizzards.insert(Coord { x: jj, y: ii }, vec![Direction::Right]),
-                '<' => blizzards.insert(Coord { x: jj, y: ii }, vec![Direction::Left]),
-                '^' => blizzards.insert(Coord { x: jj, y: ii }, vec![Direction::Up]),
-                _ => None,
-            };
+                '>' => {
+                    blizzard_positions_right.insert(Coord { x, y });
+                }
+                '^' => {
+                    blizzard_positions_up.insert(Coord { x, y });
+                }
+                'v' => {
+                    blizzard_positions_down.insert(Coord { x, y });
+                }
+                '<' => {
+                    blizzard_positions_left.insert(Coord { x, y });
+                }
+                '.' | '#' => {}
+                _ => panic!("Didn't understand character: {}", c),
+            }
         }
     }
-    let mut blizzard_positions: Vec<HashMap<Coord, Vec<Direction>>> = vec![blizzards.clone()];
-    for _ in 0..max_path * part2_goals.len() {
-        let new_blizzards: HashMap<Coord, Vec<Direction>> =
-            blizzard_move(&blizzards, goal.x, goal.y - 1);
-        blizzard_positions.push(new_blizzards.clone());
-        blizzards = new_blizzards;
+    Grid {
+        blizzard_positions_up,
+        blizzard_positions_down,
+        blizzard_positions_left,
+        blizzard_positions_right,
+        height: input.lines().count(),
+        width: input.lines().next().unwrap().len(),
     }
+}
 
-    println!(
-        "Shortest part to exit has length {}",
-        shortest_route(&blizzard_positions, max_path, &part1_goals, &start_position)
+pub fn day24() {
+    let input = include_str!("../inputs/day24.txt");
+    let mut grid = parse_input(input);
+
+    let height = grid.height;
+    let width = grid.width;
+
+    let there = bfs(
+        &mut grid,
+        &Coord { x: 1, y: 0 },
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        0,
     );
-    println!(
-        "Shortest path to exit, back to the start, and back to the exit again has length {}",
-        shortest_route(&blizzard_positions, max_path, &part2_goals, &start_position)
+    let back = bfs(
+        &mut grid,
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        &Coord { x: 1, y: 0 },
+        there - 1,
     );
+    let there_again = bfs(
+        &mut grid,
+        &Coord { x: 1, y: 0 },
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        back - 1,
+    );
+    println!("Part A is {:?}", there - 1);
+    println!("Part B is {:?}", there_again - 1);
+}
+
+#[test]
+fn sample_input_ajw3() {
+    let input = r#"#.######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#"#;
+    let mut grid = parse_input(input);
+
+    let height = grid.height;
+    let width = grid.width;
+
+    let there = bfs(
+        &mut grid,
+        &Coord { x: 1, y: 0 },
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        0,
+    );
+    assert_eq!(18, there - 1);
+
+    let back = bfs(
+        &mut grid,
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        &Coord { x: 1, y: 0 },
+        there - 1,
+    );
+    assert_eq!(23, back - there);
+
+    let there_again = bfs(
+        &mut grid,
+        &Coord { x: 1, y: 0 },
+        &Coord {
+            x: width - 2,
+            y: height - 1,
+        },
+        back - 1,
+    );
+    assert_eq!(13, there_again - back);
+
+    assert_eq!(54, there_again - 1);
 }
