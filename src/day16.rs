@@ -30,13 +30,14 @@ fn parse_input(input: &str) -> HashMap<String, Room> {
 }
 
 fn have_been_here_before(
-    visited: &HashMap<String, Vec<(u8, u32, u32)>>,
-    current_room: &str,
+    visited: &HashMap<(String, String), Vec<(u8, u32, u32)>>,
+    current_room_a: String,
+    current_room_b: String,
     time_remaining: u8,
     pressure_released: u32,
     flow_rate: u32,
 ) -> bool {
-    match visited.get(current_room) {
+    match visited.get(&(current_room_a, current_room_b)) {
         Some(previous_times) => {
             // Don't explore this route if we've been here before with more time, flow and pressure
             return previous_times
@@ -51,10 +52,11 @@ fn have_been_here_before(
 }
 
 fn bfs(rooms: &HashMap<String, Room>, start: &str, time_remaining: u8) -> u32 {
-    let mut visited: HashMap<String, Vec<(u8, u32, u32)>> = HashMap::new();
+    let mut visited: HashMap<(String, String), Vec<(u8, u32, u32)>> = HashMap::new();
     let mut q = VecDeque::new();
 
     q.push_back((
+        start,
         start,
         time_remaining,
         0,
@@ -66,8 +68,17 @@ fn bfs(rooms: &HashMap<String, Room>, start: &str, time_remaining: u8) -> u32 {
     let mut max = 0;
 
     while !q.is_empty() {
-        let (current, time_remaining, pressure_released, flow_rate, rooms_opened, route) =
-            q.pop_front().unwrap();
+        let (
+            current_a,
+            current_b,
+            time_remaining,
+            pressure_released,
+            flow_rate,
+            rooms_opened,
+            route,
+        ) = q.pop_front().unwrap();
+
+        println!("Exploring with {time_remaining} left");
 
         if time_remaining == 0 {
             if pressure_released > max {
@@ -78,53 +89,119 @@ fn bfs(rooms: &HashMap<String, Room>, start: &str, time_remaining: u8) -> u32 {
 
         if have_been_here_before(
             &visited,
-            current,
+            current_a.to_string(),
+            current_b.to_string(),
+            time_remaining,
+            pressure_released,
+            flow_rate,
+        ) || have_been_here_before(
+            &visited,
+            current_b.to_string(),
+            current_a.to_string(),
             time_remaining,
             pressure_released,
             flow_rate,
         ) {
+            // println!("I've been here before!");
             if pressure_released > max {
                 max = pressure_released;
             }
             continue;
         }
-        match visited.get_mut(current) {
+        match visited.get_mut(&(current_a.to_string(), current_b.to_string())) {
             Some(previous_times) => {
                 previous_times.push((time_remaining, pressure_released, flow_rate))
             }
             None => {
                 _ = visited.insert(
-                    current.to_string(),
+                    (current_a.to_string(), current_b.to_string()),
                     vec![(time_remaining, pressure_released, flow_rate)],
                 )
             }
         }
 
-        if !rooms_opened.contains(current) && rooms.get(current).unwrap().flow > 0 {
+        // We both try to open
+        if !rooms_opened.contains(current_a)
+            && rooms.get(current_a).unwrap().flow > 0
+            && current_a != current_b
+            && !rooms_opened.contains(current_b)
+            && rooms.get(current_b).unwrap().flow > 0
+        {
             let mut candidate_rooms = rooms_opened.clone();
-            candidate_rooms.insert(current);
+            candidate_rooms.insert(current_a);
+            candidate_rooms.insert(current_b);
+
             let mut candidate_route = route.clone();
-            candidate_route.push(current.to_string() + ": opened");
+            candidate_route.push(current_a.to_string() + ": opened");
+
             q.push_back((
-                current,
+                current_a,
+                current_b,
                 time_remaining - 1,
                 pressure_released + flow_rate,
-                flow_rate + rooms.get(current).unwrap().flow,
+                flow_rate + rooms.get(current_a).unwrap().flow + rooms.get(current_b).unwrap().flow,
                 candidate_rooms,
                 candidate_route,
             ))
         }
-        for c in &rooms.get(current).unwrap().neighbours {
+
+        // A opens, B moves
+        if !rooms_opened.contains(current_a) && rooms.get(current_a).unwrap().flow > 0 {
+            let mut candidate_rooms = rooms_opened.clone();
+            candidate_rooms.insert(current_a);
+
             let mut candidate_route = route.clone();
-            candidate_route.push(c.to_string() + ": moved");
-            q.push_back((
-                c,
-                time_remaining - 1,
-                pressure_released + flow_rate,
-                flow_rate,
-                rooms_opened.clone(),
-                candidate_route,
-            ))
+            candidate_route.push(current_a.to_string() + ": opened");
+
+            for c in &rooms.get(current_b).unwrap().neighbours {
+                q.push_back((
+                    current_a,
+                    c,
+                    time_remaining - 1,
+                    pressure_released + flow_rate,
+                    flow_rate + rooms.get(current_a).unwrap().flow,
+                    candidate_rooms.clone(),
+                    candidate_route.clone(),
+                ))
+            }
+        }
+
+        // A moves, B opens
+        if !rooms_opened.contains(current_b) && rooms.get(current_b).unwrap().flow > 0 {
+            let mut candidate_rooms = rooms_opened.clone();
+            candidate_rooms.insert(current_b);
+
+            let mut candidate_route = route.clone();
+            candidate_route.push(current_a.to_string() + ": opened");
+
+            for c in &rooms.get(current_a).unwrap().neighbours {
+                q.push_back((
+                    c,
+                    current_b,
+                    time_remaining - 1,
+                    pressure_released + flow_rate,
+                    flow_rate + rooms.get(current_b).unwrap().flow,
+                    candidate_rooms.clone(),
+                    candidate_route.clone(),
+                ))
+            }
+        }
+
+        // We both move.
+        for c1 in &rooms.get(current_a).unwrap().neighbours {
+            for c2 in &rooms.get(current_b).unwrap().neighbours {
+                let mut candidate_route = route.clone();
+                candidate_route.push(c1.to_string() + ": moved");
+                q.push_back((
+                    c1,
+                    c2,
+                    time_remaining - 1,
+                    pressure_released + flow_rate,
+                    flow_rate,
+                    rooms_opened.clone(),
+                    candidate_route,
+                ))
+            }
         }
     }
     max
@@ -134,8 +211,8 @@ pub fn day16() {
     let input = include_str!("../inputs/day16.txt");
     let rooms = parse_input(input);
 
-    let max = bfs(&rooms, &"AA", 30);
-    println!("Part A is: {}", max);
+    let max = bfs(&rooms, &"AA", 26);
+    println!("Part B is: {}", max);
 }
 
 #[test]
