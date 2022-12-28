@@ -15,6 +15,7 @@ mod day13;
 mod day14;
 mod day15;
 mod day16;
+mod day17;
 mod day18;
 mod day19;
 mod day20;
@@ -53,6 +54,7 @@ fn main() {
         14 => day14::day14(),
         15 => day15::day15(),
         16 => day16::day16(),
+        17 => day17::day17(),
         18 => day18::day18(),
         19 => day19::day19(),
         20 => day20::day20(),
