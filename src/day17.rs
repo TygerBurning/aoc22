@@ -1,3 +1,4 @@
+#[derive(Debug)]
 enum Shape {
     Dash(Coord),
     Plus(Coord),
@@ -80,7 +81,7 @@ enum Dir {
 }
 
 struct Grid {
-    heights: [[bool; 10000]; 7],
+    heights: [[bool; 5000]; 7],
     highest_point: usize,
 }
 
@@ -89,17 +90,17 @@ impl Grid {
         for c in shape.coordinates() {
             match dir {
                 Dir::Left => {
-                    if c.x == 0 || self.heights[c.x - 1][c.y] {
+                    if c.x == 0 || self.heights[c.x - 1][c.y % 5000] {
                         return true;
                     }
                 }
                 Dir::Right => {
-                    if c.x == 6 || self.heights[c.x + 1][c.y] {
+                    if c.x == 6 || self.heights[c.x + 1][c.y % 5000] {
                         return true;
                     }
                 }
                 Dir::Down => {
-                    if c.y == 0 || self.heights[c.x][c.y - 1] {
+                    if c.y == 0 || self.heights[c.x][(c.y - 1) % 5000] {
                         return true;
                     }
                 }
@@ -110,9 +111,9 @@ impl Grid {
 
     fn add_shape(&mut self, shape: &Shape) {
         for c in shape.coordinates() {
-            self.heights[c.x][c.y] = true;
-            if c.y + 1 > self.highest_point {
-                self.highest_point = c.y + 1;
+            self.heights[c.x][c.y % 5000] = true;
+            if c.y > self.highest_point {
+                self.highest_point = c.y;
             }
         }
     }
@@ -131,8 +132,8 @@ fn parse_input(input: &str) -> Vec<Dir> {
 
 fn drop_shape(shape: &mut Shape, jets: &Vec<Dir>, jet_index: &mut usize, grid: &mut Grid) {
     match shape {
-        Shape::Dash(c) | Shape::Plus(c) | Shape::Corner(c) | Shape::Line(c) | Shape::Square(c) => {
-                loop {
+        Shape::Dash(_) | Shape::Plus(_) | Shape::Corner(_) | Shape::Line(_) | Shape::Square(_) => {
+            loop {
                 let dir = jets[*jet_index % jets.len()];
                 *jet_index += 1;
                 let _ = shape.mov(grid, &dir);
@@ -149,12 +150,14 @@ pub fn day17() {
     let input = include_str!("../inputs/day17.txt");
 
     let jets = parse_input(input);
-    let mut jet_index = 0;
 
     let mut grid = Grid {
-        heights: [[false; 10000]; 7],
+        heights: [[false; 5000]; 7],
         highest_point: 0,
     };
+    for i in 0..7 {
+        grid.heights[i][0] = true;
+    }
 
     let shapes = [
         Shape::Dash,
@@ -162,45 +165,37 @@ pub fn day17() {
         Shape::Corner,
         Shape::Line,
         Shape::Square,
-    ];
+        ];
 
-    for i in 0..2022 {
+    // After many shapes have been dropped, we happen to create a flat floor.
+    // I think due to some magic, it's likely this happens repeatedly - coinciding
+    // with a matching jet index. Thus we have 3 heights:
+    // - The first height - running up to the point we re-create a floor
+    // - The middle height - calculated by multiplying the cycle height by the amount of cycles
+    // - The final height - calculated by just running the old program.
+
+    // By observation and printlns.
+    let first_height = 2318;
+
+    // By observation and printls
+    let wrap_info_shape_start = 1485 + 1;
+    let wrap_info_shape_cycle = 1700;
+    let wrap_info_height_cycle = 2642;
+
+    let huge = 1000000000000;
+    let num_of_cycles = (huge - wrap_info_shape_start) / wrap_info_shape_cycle;
+    let middle_height = wrap_info_height_cycle * num_of_cycles;
+
+
+    let mut jet_index = 8772;
+    let starting_shape = wrap_info_shape_start + num_of_cycles * wrap_info_shape_cycle;
+
+    for i in starting_shape..huge {
         let mut shape = shapes[i % shapes.len()](Coord {
             x: 2,
-            y: grid.highest_point + 3,
+            y: grid.highest_point + 4,
         });
         drop_shape(&mut shape, &jets, &mut jet_index, &mut grid);
     }
-
-    println!("Part A is: {}", grid.highest_point);
-}
-
-#[test]
-fn sample_input_17() {
-    let input = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
-    let jets = parse_input(input);
-    let mut jet_index = 0;
-    let mut grid = Grid {
-        heights: [[false; 10000]; 7],
-        highest_point: 0,
-    };
-
-    let shapes = [
-        Shape::Dash,
-        Shape::Plus,
-        Shape::Corner,
-        Shape::Line,
-        Shape::Square,
-    ];
-
-    for i in 0..2022 {
-        let mut shape = shapes[i % shapes.len()](Coord {
-            x: 2,
-            y: grid.highest_point + 3,
-        });
-        drop_shape(&mut shape, &jets, &mut jet_index, &mut grid);
-    }
-
-    println!("Part A is: {}", grid.highest_point);
-    assert_eq!(grid.highest_point , 3068);
+    println!("Part B is: {}", first_height + middle_height + grid.highest_point);
 }
